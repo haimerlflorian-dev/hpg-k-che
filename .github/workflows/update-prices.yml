@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Download und komprimiere Preisdaten
+      - name: Download und komprimiere mit gzip
         run: |
           mkdir -p data
           echo "Lade Rohdaten..."
@@ -23,27 +23,12 @@ jobs:
             https://heisse-preise.io/data/latest-canonical.json
           echo "Rohdaten-Groesse:"
           ls -lh /tmp/raw.json
-          echo "Komprimiere (nur aktuelle Preise)..."
-          node -e "
-            const fs = require('fs');
-            const raw = JSON.parse(fs.readFileSync('/tmp/raw.json', 'utf8'));
-            const items = Array.isArray(raw) ? raw : (raw.items || raw.data || []);
-            const compact = items
-              .filter(p => p && p.name && p.store)
-              .map(p => ({
-                n: p.name,
-                s: String(p.store).toLowerCase(),
-                p: typeof p.price === 'number' ? p.price : (p.priceHistory && p.priceHistory[0] ? p.priceHistory[0].price : 0),
-                u: p.unit || 'stk',
-                q: p.quantity || 1,
-                b: p.bio ? 1 : 0,
-              }))
-              .filter(p => p.p > 0);
-            fs.writeFileSync('data/prices.json', JSON.stringify(compact));
-            console.log('Produkte:', compact.length);
-          "
+          echo "Komprimiere mit gzip..."
+          gzip -9 -c /tmp/raw.json > data/prices.json.gz
           echo "Komprimierte Groesse:"
-          ls -lh data/prices.json
+          ls -lh data/prices.json.gz
+          # Alte unkomprimierte Datei entfernen falls vorhanden
+          rm -f data/prices.json
 
       - name: Zeitstempel speichern
         run: |
@@ -54,7 +39,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main || true
-          git add data/
+          git add -A data/
           if git diff --staged --quiet; then
             echo "Keine Aenderungen"
           else
