@@ -23,8 +23,7 @@ jobs:
             https://heisse-preise.io/data/latest-canonical.json
           echo "Rohdaten-Groesse:"
           ls -lh /tmp/raw.json
-          
-          echo "Komprimiere (nur aktuelle Preise, keine Historie)..."
+          echo "Komprimiere (nur aktuelle Preise)..."
           node -e "
             const fs = require('fs');
             const raw = JSON.parse(fs.readFileSync('/tmp/raw.json', 'utf8'));
@@ -34,7 +33,7 @@ jobs:
               .map(p => ({
                 n: p.name,
                 s: String(p.store).toLowerCase(),
-                p: typeof p.price === 'number' ? p.price : (p.priceHistory?.[0]?.price || 0),
+                p: typeof p.price === 'number' ? p.price : (p.priceHistory && p.priceHistory[0] ? p.priceHistory[0].price : 0),
                 u: p.unit || 'stk',
                 q: p.quantity || 1,
                 b: p.bio ? 1 : 0,
@@ -54,6 +53,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
           git add data/
           if git diff --staged --quiet; then
             echo "Keine Aenderungen"
