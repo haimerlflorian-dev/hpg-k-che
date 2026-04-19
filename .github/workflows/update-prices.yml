@@ -14,13 +14,36 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Download Preisdaten von heisse-preise.io
+      - name: Download und komprimiere Preisdaten
         run: |
           mkdir -p data
+          echo "Lade Rohdaten..."
           curl -L --fail --retry 3 --retry-delay 10 \
-            -o data/prices.json \
+            -o /tmp/raw.json \
             https://heisse-preise.io/data/latest-canonical.json
-          echo "Dateigröße:"
+          echo "Rohdaten-Groesse:"
+          ls -lh /tmp/raw.json
+          
+          echo "Komprimiere (nur aktuelle Preise, keine Historie)..."
+          node -e "
+            const fs = require('fs');
+            const raw = JSON.parse(fs.readFileSync('/tmp/raw.json', 'utf8'));
+            const items = Array.isArray(raw) ? raw : (raw.items || raw.data || []);
+            const compact = items
+              .filter(p => p && p.name && p.store)
+              .map(p => ({
+                n: p.name,
+                s: String(p.store).toLowerCase(),
+                p: typeof p.price === 'number' ? p.price : (p.priceHistory?.[0]?.price || 0),
+                u: p.unit || 'stk',
+                q: p.quantity || 1,
+                b: p.bio ? 1 : 0,
+              }))
+              .filter(p => p.p > 0);
+            fs.writeFileSync('data/prices.json', JSON.stringify(compact));
+            console.log('Produkte:', compact.length);
+          "
+          echo "Komprimierte Groesse:"
           ls -lh data/prices.json
 
       - name: Zeitstempel speichern
