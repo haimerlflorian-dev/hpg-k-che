@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HPG Küche · Rezept-Preisvergleich</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100vh; }
+    body {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      color: #2B1810;
+      background: linear-gradient(180deg, #FDF8F3 0%, #F5EBE0 100%);
+      padding: 24px 20px 80px;
+    }
+    .mono { font-family: 'Inter', system-ui, sans-serif; }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    button { font-family: inherit; cursor: pointer; }
+    button:active { transform: scale(0.98); }
+    .container { max-width: 720px; margin: 0 auto; }
+
+    /* Header */
+    .header { text-align: center; margin-bottom: 32px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 8px 16px; border-radius: 999px;
+      background: #2B1810; color: #FDF8F3;
+      font-family: 'Inter', sans-serif; font-size: 11px;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      font-weight: 500; margin-bottom: 16px;
+    }
+    h1 { font-size: 42px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.02em; line-height: 1.1; }
+    h1 em { color: #B8480C; font-style: italic; }
+    .subtitle { font-family: 'Inter', sans-serif; font-size: 13px; color: #6B4C3A; margin-bottom: 12px; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'Inter', sans-serif; font-size: 10px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 999px;
+    }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .status-live { background: #D4F0D4; color: #1A5E1A; }
+    .status-live .status-dot { background: #1A5E1A; }
+    .status-loading { background: #FFF3D6; color: #8B6F00; }
+    .status-loading .status-dot { background: #D4AA00; }
+    .status-fallback { background: #FFE5E5; color: #8B0000; }
+    .status-fallback .status-dot { background: #B8480C; }
+
+    /* Cards */
+    .card {
+      padding: 20px 22px; background: #FFF;
+      border: 1px solid #E8DCC9; border-radius: 12px;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 1px 2px rgba(43, 24, 16, 0.04);
+      margin-bottom: 12px;
+    }
+    .card:hover { border-color: #2B1810; transform: translateY(-1px); }
+    .card-row { display: flex; justify-content: space-between; align-items: center; }
+    .card h3 { font-size: 22px; margin-bottom: 4px; font-weight: 500; }
+    .card-meta { font-family: 'Inter', sans-serif; font-size: 12px; color: #8B6F5A; }
+    .card-arrow { font-size: 28px; }
+
+    /* Buttons */
+    .btn {
+      font-family: 'Inter', sans-serif; font-weight: 500;
+      border: none; border-radius: 999px; cursor: pointer;
+    }
+    .btn-primary {
+      padding: 10px 16px; background: #2B1810; color: #FDF8F3;
+      font-size: 13px; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-cta {
+      width: 100%; padding: 18px; background: #B8480C; color: #FDF8F3;
+      border-radius: 12px; font-size: 15px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      box-shadow: 0 4px 12px rgba(184, 72, 12, 0.25);
+    }
+    .btn-back {
+      background: none; border: none; color: #6B4C3A;
+      font-family: 'Inter', sans-serif; font-size: 13px;
+      margin-bottom: 20px; padding: 0;
+    }
+
+    /* Recipe Detail */
+    .detail-title { font-size: 32px; margin-bottom: 4px; font-weight: 500; }
+    .detail-meta { font-family: 'Inter', sans-serif; font-size: 12px; color: #8B6F5A; margin-bottom: 24px; }
+    .ingredient-list {
+      background: #FFF; border: 1px solid #E8DCC9; border-radius: 12px;
+      padding: 24px; margin-bottom: 20px;
+    }
+    .section-label {
+      font-family: 'Inter', sans-serif; font-size: 11px;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: #8B6F5A; margin-bottom: 16px;
+    }
+    .ingredient-row {
+      display: flex; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px dashed #E8DCC9;
+    }
+    .ingredient-row:last-child { border-bottom: none; }
+    .ingredient-name { font-size: 17px; }
+    .ingredient-amount { font-family: 'Inter', sans-serif; font-size: 14px; color: #6B4C3A; }
+
+    /* Results */
+    .total-card {
+      background: linear-gradient(135deg, #2B1810 0%, #4A2E1F 100%);
+      color: #FDF8F3; padding: 28px; border-radius: 16px; margin-bottom: 24px;
+    }
+    .total-label {
+      font-family: 'Inter', sans-serif; font-size: 11px;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      opacity: 0.7; margin-bottom: 6px;
+    }
+    .total-amount { font-size: 48px; font-weight: 600; line-height: 1; }
+    .total-hint { font-family: 'Inter', sans-serif; font-size: 12px; opacity: 0.6; margin-top: 8px; }
+    .shop-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px; border-radius: 8px; margin-bottom: 8px;
+    }
+    .shop-name {
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+    }
+    .shop-price { font-size: 20px; font-weight: 600; }
+    .shop-coverage {
+      font-family: 'Inter', sans-serif; font-size: 11px;
+      color: #6B4C3A; margin-left: 8px;
+    }
+    .result-item {
+      background: #FFF; border: 1px solid #E8DCC9; border-radius: 12px;
+      padding: 16px 18px; margin-bottom: 12px;
+    }
+    .cheapest-box {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 12px; border-radius: 6px;
+    }
+    .store-tag {
+      font-family: 'Inter', sans-serif; font-size: 10px;
+      font-weight: 700; letter-spacing: 0.1em;
+    }
+    .product-name { font-family: 'Inter', sans-serif; font-size: 12px; color: #2B1810; }
+    .alt-toggle {
+      font-family: 'Inter', sans-serif; font-size: 11px;
+      color: #8B6F5A; cursor: pointer; margin-top: 8px;
+    }
+    .alt-item {
+      font-family: 'Inter', sans-serif; font-size: 12px;
+      display: flex; justify-content: space-between;
+      padding: 6px 10px; background: #FDF8F3; border-radius: 4px; margin-top: 4px;
+    }
+
+    /* Loading */
+    .loading-box { padding: 40px 20px; text-align: center; }
+    .spinner {
+      display: inline-block; width: 32px; height: 32px;
+      border: 3px solid #E8DCC9; border-top-color: #B8480C;
+      border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    .loading-text { font-size: 20px; margin-top: 16px; font-style: italic; color: #6B4C3A; }
+    .debug-log {
+      margin-top: 20px; padding: 12px; background: #2B1810; color: #FDF8F3;
+      border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 11px;
+      text-align: left; max-height: 200px; overflow: auto;
+    }
+    .debug-log div { margin-bottom: 4px; }
+
+    /* Error */
+    .error-box {
+      background: #FFE5E5; border: 1px solid #B8480C; border-radius: 12px;
+      padding: 20px; margin-bottom: 20px;
+    }
+    .error-label {
+      font-family: 'Inter', sans-serif; font-size: 11px;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: #8B0000; margin-bottom: 8px;
+    }
+    .error-msg { font-size: 15px; color: #2B1810; margin-bottom: 12px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(43, 24, 16, 0.6);
+      display: flex; align-items: flex-end; z-index: 100;
+    }
+    .modal {
+      background: #FDF8F3; width: 100%; max-height: 90vh; overflow: auto;
+      border-radius: 20px 20px 0 0; padding: 24px;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-title { font-size: 26px; font-weight: 500; }
+    .close-btn { background: none; border: none; font-size: 24px; color: #2B1810; }
+    .input {
+      width: 100%; padding: 14px; font-size: 18px;
+      border: 1px solid #E8DCC9; border-radius: 8px;
+      font-family: inherit; background: #FFF; margin-bottom: 12px;
+    }
+    .input-sm {
+      padding: 10px; font-size: 14px;
+      border: 1px solid #E8DCC9; border-radius: 6px; background: #FFF;
+    }
+    .ing-row-grid {
+      display: grid; grid-template-columns: 1fr 80px 80px 36px;
+      gap: 6px; margin-bottom: 8px;
+    }
+    .add-btn {
+      padding: 8px 14px; background: transparent;
+      border: 1px dashed #8B6F5A; color: #6B4C3A; border-radius: 6px;
+      font-family: 'Inter', sans-serif; font-size: 12px; margin-bottom: 20px;
+    }
+    .save-btn {
+      width: 100%; padding: 16px; background: #2B1810; color: #FDF8F3;
+      border-radius: 10px; font-size: 15px; font-weight: 500;
+      font-family: 'Inter', sans-serif; border: none;
+    }
+
+    /* Store Colors */
+    .store-billa { background: #FFE5B4; }
+    .store-billa .store-tag { color: #C8102E; }
+    .store-spar { background: #FFE8E1; }
+    .store-spar .store-tag { color: #006B3C; }
+    .store-hofer { background: #FFF3D6; }
+    .store-hofer .store-tag { color: #D4AA00; }
+    .store-lidl { background: #E3EEFF; }
+    .store-lidl .store-tag { color: #0050AA; }
+    .store-mpreis { background: #F0E6FF; }
+    .store-mpreis .store-tag { color: #6B2C91; }
+    .store-dm { background: #FFE1F0; }
+    .store-dm .store-tag { color: #003A5D; }
+    .store-penny { background: #FFDCDC; }
+    .store-penny .store-tag { color: #C8102E; }
+    .store-unimarkt { background: #FFF3C4; }
+    .store-unimarkt .store-tag { color: #8B6F00; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="badge">🍴 HPG Küche</div>
+      <h1>Was kochen wir <em>günstiger</em>?</h1>
+      <p class="subtitle">Rezepte verwalten · Zutaten matchen · Beim Einkauf sparen</p>
+      <div id="status-pill" class="status-pill status-loading">
+        <span class="status-dot"></span>
+        <span id="status-text">Lade Preisdaten...</span>
+      </div>
+    </header>
+
+    <div id="app"></div>
+  </div>
+
+  <script>
+    // ========== KONFIGURATION ==========
+    // WICHTIG: Hier deine Cloudflare Worker URL eintragen (siehe SETUP.md)
+    const API_PROXY_URL = 'https://DEIN-WORKER.workers.dev';
+
+    // ========== PREISDATEN ==========
+    const STORE_LABELS = {
+      billa: 'BILLA', spar: 'SPAR', hofer: 'HOFER', lidl: 'LIDL',
+      mpreis: 'MPREIS', dm: 'DM', penny: 'PENNY', unimarkt: 'UNIMARKT',
+      interspar: 'INTERSPAR', 'billa plus': 'BILLA PLUS',
+    };
+
+    let priceDB = [];
+    let dbStatus = 'loading';
+    let recipes = [{
+      id: 'r1', name: 'Spaghetti Bolognese', servings: 4,
+      ingredients: [
+        { name: 'Spaghetti', amount: 500, unit: 'g' },
+        { name: 'Faschiertes', amount: 500, unit: 'g' },
+        { name: 'Zwiebel', amount: 1, unit: 'stk' },
+        { name: 'Knoblauch', amount: 2, unit: 'stk' },
+        { name: 'Tomaten passiert', amount: 700, unit: 'g' },
+        { name: 'Olivenöl', amount: 30, unit: 'ml' },
+        { name: 'Parmesan', amount: 50, unit: 'g' },
+        { name: 'Karotte', amount: 1, unit: 'stk' },
+      ]
+    }];
+    let view = 'recipes';
+    let selectedRecipe = null;
+    let priceResults = null;
+    let isMatching = false;
+    let debugLog = [];
+    let errorMsg = null;
+
+    // ========== DATEN LADEN ==========
+    // Priorität: 1. Eigenes data/prices.json (vom GitHub Action) 2. Fallback
+    async function loadPriceData() {
+      const sources = [
+        './data/prices.json',  // Dein tägliches Update
+        'https://heisse-preise.io/data/latest-canonical.json',  // Direkt (falls CORS geht)
+      ];
+
+      for (const url of sources) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const raw = await res.json();
+          const items = parseRawData(raw);
+          if (items.length > 100) {
+            priceDB = items;
+            dbStatus = 'live';
+            updateStatusBadge();
+            console.log(`✓ ${items.length} Produkte geladen von ${url}`);
+            return;
+          }
+        } catch (e) {
+          console.warn(url, e.message);
+        }
+      }
+
+      // Fallback: Demo-Daten
+      priceDB = getDemoData();
+      dbStatus = 'fallback';
+      updateStatusBadge();
+    }
+
+    function parseRawData(raw) {
+      let items = Array.isArray(raw) ? raw : (raw.items || raw.data || raw.products || []);
+      return items
+        .filter(p => p && (p.name || p.description) && p.store)
+        .map(p => ({
+          name: p.name || p.description || '',
+          store: String(p.store).toLowerCase(),
+          price: typeof p.price === 'number' ? p.price :
+                 (p.priceHistory?.[0]?.price || p.prices?.[0]?.price || 0),
+          unit: p.unit || 'stk',
+          quantity: p.quantity || 1,
+          bio: p.bio || false,
+        }))
+        .filter(p => p.price > 0);
+    }
+
+    function getDemoData() {
+      return [
+        { name: "Zwiebel gelb 1kg", store: "hofer", price: 1.29, unit: "kg", quantity: 1 },
+        { name: "Speisezwiebeln 500g", store: "billa", price: 0.99, unit: "g", quantity: 500 },
+        { name: "Zwiebeln gelb Netz 2kg", store: "spar", price: 2.49, unit: "kg", quantity: 2 },
+        { name: "Knoblauch 200g", store: "billa", price: 1.49, unit: "g", quantity: 200 },
+        { name: "Knoblauch Netz 250g", store: "hofer", price: 1.29, unit: "g", quantity: 250 },
+        { name: "Olivenöl extra vergine 500ml", store: "billa", price: 4.99, unit: "ml", quantity: 500 },
+        { name: "Olivenöl nativ 750ml", store: "hofer", price: 5.49, unit: "ml", quantity: 750 },
+        { name: "Spaghetti 500g", store: "billa", price: 0.89, unit: "g", quantity: 500 },
+        { name: "Nudeln Spaghetti 500g", store: "hofer", price: 0.69, unit: "g", quantity: 500 },
+        { name: "Tomaten passiert 500g", store: "billa", price: 0.99, unit: "g", quantity: 500 },
+        { name: "Tomatenpassata 700g", store: "hofer", price: 1.19, unit: "g", quantity: 700 },
+        { name: "Faschiertes gemischt 500g", store: "hofer", price: 3.99, unit: "g", quantity: 500 },
+        { name: "Rindfleisch Faschiert 500g", store: "billa", price: 4.99, unit: "g", quantity: 500 },
+        { name: "Parmesan 100g", store: "billa", price: 2.99, unit: "g", quantity: 100 },
+        { name: "Parmesan gerieben 80g", store: "spar", price: 2.49, unit: "g", quantity: 80 },
+        { name: "Karotten 1kg", store: "billa", price: 1.29, unit: "kg", quantity: 1 },
+        { name: "Möhren 1kg", store: "hofer", price: 0.99, unit: "kg", quantity: 1 },
+      ];
+    }
+
+    function updateStatusBadge() {
+      const pill = document.getElementById('status-pill');
+      const text = document.getElementById('status-text');
+      pill.className = 'status-pill status-' + dbStatus;
+      if (dbStatus === 'live') text.textContent = `Live-Preise · ${priceDB.length.toLocaleString('de-AT')} Produkte`;
+      else if (dbStatus === 'fallback') text.textContent = `Demo-Modus · ${priceDB.length} Beispiel-Produkte`;
+      else text.textContent = 'Lade Preisdaten...';
+    }
+
+    // ========== REZEPTE SPEICHERN ==========
+    function loadRecipes() {
+      try {
+        const saved = localStorage.getItem('hpg-recipes');
+        if (saved) recipes = JSON.parse(saved);
+      } catch {}
+    }
+    function saveRecipes() {
+      try { localStorage.setItem('hpg-recipes', JSON.stringify(recipes)); } catch {}
+    }
+
+    // ========== MATCHING ==========
+    function log(msg) {
+      console.log(msg);
+      debugLog.push(`${new Date().toLocaleTimeString('de-AT')} ${msg}`);
+      if (isMatching) render();
+    }
+
+    async function findCheapestPrices(recipe) {
+      isMatching = true;
+      priceResults = null;
+      errorMsg = null;
+      debugLog = [];
+      view = 'results';
+      render();
+
+      try {
+        log(`Start · DB: ${priceDB.length} Produkte (${dbStatus})`);
+
+        const synonyms = {
+          'zwiebel': ['zwiebel', 'speisezwiebel'],
+          'knoblauch': ['knoblauch'],
+          'faschiertes': ['faschiert', 'hackfleisch', 'hack'],
+          'spaghetti': ['spaghetti', 'nudel'],
+          'tomaten': ['tomate', 'paradeiser', 'passata', 'passiert'],
+          'olivenöl': ['oliven'],
+          'parmesan': ['parmesan', 'parmigiano', 'grana'],
+          'karotte': ['karotte', 'möhre'],
+        };
+        const stopwords = ['und', 'oder', 'frisch', 'ganz', 'halb', 'klein', 'groß', 'der', 'die', 'das'];
+
+        const preFiltered = recipe.ingredients.map((ing, idx) => {
+          let keywords = ing.name.toLowerCase().split(/[\s,-]+/)
+            .filter(w => w.length > 2 && !stopwords.includes(w));
+          const expanded = new Set(keywords);
+          keywords.forEach(k => {
+            Object.entries(synonyms).forEach(([key, syns]) => {
+              if (k.includes(key) || key.includes(k)) syns.forEach(s => expanded.add(s));
+            });
+          });
+          keywords = [...expanded];
+          const matches = priceDB.filter(p => {
+            const pn = (p.name || '').toLowerCase();
+            return keywords.some(k => pn.includes(k));
+          });
+          log(`  "${ing.name}" → ${matches.length} Treffer`);
+          return { ingredient_index: idx, ingredient: ing, candidates: matches.sort((a,b) => a.price - b.price).slice(0, 25) };
+        });
+
+        const totalCandidates = preFiltered.reduce((s, pf) => s + pf.candidates.length, 0);
+        if (totalCandidates === 0) {
+          throw new Error(`Keine Produkte gefunden. DB: ${priceDB.length} Einträge.`);
+        }
+
+        const globalCandidates = [];
+        preFiltered.forEach(pf => pf.candidates.forEach(c => {
+          globalCandidates.push({ ...c, _idx: globalCandidates.length });
+        }));
+
+        log(`Sende ${globalCandidates.length} Kandidaten an Claude...`);
+
+        const response = await fetch(API_PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1500,
+            messages: [{
+              role: 'user',
+              content: `Matche Rezept-Zutaten auf österreichische Supermarkt-Produkte.
+
+ZUTATEN:
+${recipe.ingredients.map((i,idx) => `${idx}: ${i.amount}${i.unit} ${i.name}`).join('\n')}
+
+KANDIDATEN (Index | Name | Shop | Preis):
+${preFiltered.map(pf => `
+Zutat ${pf.ingredient_index} (${pf.ingredient.name}):
+${pf.candidates.map(c => `  ${c._idx}: ${c.name} | ${c.store} | €${c.price}`).join('\n') || '  (leer)'}`).join('\n')}
+
+Filtere strikt - nur was wirklich diese Zutat IST. Kein Fertigprodukt.
+
+Antwort NUR als JSON-Array, kein Markdown:
+[{"ingredient_index":0,"matching_product_indices":[12,13]}]`
+            }]
+          })
+        });
+
+        if (!response.ok) {
+          const err = await response.text();
+          throw new Error(`API ${response.status}: ${err.slice(0, 200)}`);
+        }
+
+        const data = await response.json();
+        const text = data.content.filter(i => i.type === 'text').map(i => i.text).join('');
+        const matches = JSON.parse(text.replace(/```json|```/g, '').trim());
+
+        priceResults = recipe.ingredients.map((ing, idx) => {
+          const match = matches.find(m => m.ingredient_index === idx);
+          const candidates = match ? match.matching_product_indices.map(i => globalCandidates[i]).filter(Boolean) : [];
+          const cheapest = candidates.length ? candidates.reduce((a,b) => a.price < b.price ? a : b) : null;
+          return { ingredient: ing, candidates, cheapest };
+        });
+        log(`✓ Fertig: ${priceResults.filter(r => r.cheapest).length}/${priceResults.length} gematcht`);
+      } catch (e) {
+        errorMsg = e.message;
+        log(`FEHLER: ${e.message}`);
+      } finally {
+        isMatching = false;
+        render();
+      }
+    }
+
+    // ========== RENDERING ==========
+    function render() {
+      const app = document.getElementById('app');
+      if (view === 'recipes') app.innerHTML = renderRecipeList();
+      else if (view === 'detail') app.innerHTML = renderDetail();
+      else if (view === 'results') app.innerHTML = renderResults();
+    }
+
+    function renderRecipeList() {
+      return `
+        <div class="fade-in">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px;">
+            <h2 style="font-size:24px;font-weight:500;">Deine Rezepte</h2>
+            <button class="btn btn-primary" onclick="openAddModal()">+ Neu</button>
+          </div>
+          ${recipes.map(r => `
+            <div class="card" onclick="openRecipe('${r.id}')">
+              <div class="card-row">
+                <div>
+                  <h3>${escapeHtml(r.name)}</h3>
+                  <p class="card-meta">${r.ingredients.length} Zutaten · ${r.servings} Portionen</p>
+                </div>
+                <div class="card-arrow">→</div>
+              </div>
+            </div>
+          `).join('')}
+          ${recipes.length === 0 ? '<div style="padding:40px;text-align:center;color:#8B6F5A;font-style:italic;">Noch keine Rezepte.</div>' : ''}
+        </div>
+      `;
+    }
+
+    function renderDetail() {
+      if (!selectedRecipe) return '';
+      return `
+        <div class="fade-in">
+          <button class="btn-back" onclick="backToList()">← Zurück</button>
+          <h2 class="detail-title">${escapeHtml(selectedRecipe.name)}</h2>
+          <p class="detail-meta">${selectedRecipe.servings} Portionen</p>
+          <div class="ingredient-list">
+            <h3 class="section-label">Zutaten</h3>
+            ${selectedRecipe.ingredients.map(i => `
+              <div class="ingredient-row">
+                <span class="ingredient-name">${escapeHtml(i.name)}</span>
+                <span class="ingredient-amount">${i.amount} ${i.unit}</span>
+              </div>
+            `).join('')}
+          </div>
+          <button class="btn btn-cta" onclick="startMatch()">✨ Günstigste Preise finden</button>
+        </div>
+      `;
+    }
+
+    function renderResults() {
+      const total = priceResults?.reduce((s, r) => s + (r.cheapest?.price || 0), 0) || 0;
+      const perShop = {};
+      if (priceResults) {
+        Object.keys(STORE_LABELS).forEach(shop => {
+          let sum = 0, coverage = 0;
+          priceResults.forEach(r => {
+            const inShop = r.candidates.filter(c => c.store === shop);
+            if (inShop.length) { sum += Math.min(...inShop.map(c => c.price)); coverage++; }
+          });
+          if (coverage > 0) perShop[shop] = { sum, coverage };
+        });
+      }
+
+      return `
+        <div class="fade-in">
+          <button class="btn-back" onclick="backToDetail()">← Zurück</button>
+          ${isMatching ? `
+            <div class="loading-box">
+              <div class="spinner"></div>
+              <p class="loading-text">Claude vergleicht Preise…</p>
+              ${debugLog.length ? `<div class="debug-log">${debugLog.map(l => `<div>${escapeHtml(l)}</div>`).join('')}</div>` : ''}
+            </div>
+          ` : ''}
+          ${errorMsg ? `
+            <div class="error-box">
+              <div class="error-label">Fehler</div>
+              <p class="error-msg">${escapeHtml(errorMsg)}</p>
+              <details><summary style="cursor:pointer;font-size:11px;color:#6B4C3A;font-family:Inter,sans-serif;">Debug-Log</summary>
+                <pre style="margin-top:8px;padding:10px;background:#2B1810;color:#FDF8F3;border-radius:6px;font-size:10px;overflow:auto;white-space:pre-wrap;font-family:Inter,sans-serif;">${escapeHtml(debugLog.join('\n'))}</pre>
+              </details>
+            </div>
+          ` : ''}
+          ${priceResults && !isMatching ? `
+            <div class="total-card">
+              <p class="total-label">Günstigste Kombination</p>
+              <div class="total-amount">€${total.toFixed(2)}</div>
+              <p class="total-hint">Jede Zutat im billigsten Shop</p>
+            </div>
+            ${Object.keys(perShop).length ? `
+              <h3 class="section-label">Alles in einem Shop</h3>
+              ${Object.entries(perShop).sort((a,b) => a[1].sum - b[1].sum).map(([shop, d]) => `
+                <div class="shop-row store-${shop}">
+                  <span class="shop-name store-tag">${STORE_LABELS[shop] || shop.toUpperCase()}</span>
+                  <div style="text-align:right;"><span class="shop-price">€${d.sum.toFixed(2)}</span><span class="shop-coverage">${d.coverage}/${priceResults.length}</span></div>
+                </div>
+              `).join('')}
+            ` : ''}
+            <h3 class="section-label" style="margin-top:24px;">Pro Zutat</h3>
+            ${priceResults.map((r, i) => `
+              <div class="result-item">
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                  <span style="font-size:18px;font-weight:500;">${escapeHtml(r.ingredient.name)}</span>
+                  <span class="ingredient-amount">${r.ingredient.amount} ${r.ingredient.unit}</span>
+                </div>
+                ${r.cheapest ? `
+                  <div class="cheapest-box store-${r.cheapest.store}">
+                    <div>
+                      <div class="store-tag">${STORE_LABELS[r.cheapest.store] || r.cheapest.store.toUpperCase()}</div>
+                      <div class="product-name">${escapeHtml(r.cheapest.name)}</div>
+                    </div>
+                    <div style="font-size:22px;font-weight:600;">€${r.cheapest.price.toFixed(2)}</div>
+                  </div>
+                  ${r.candidates.length > 1 ? `
+                    <details style="margin-top:8px;"><summary class="alt-toggle">+${r.candidates.length - 1} Alternativen</summary>
+                      ${r.candidates.filter(c => c !== r.cheapest).map(c => `
+                        <div class="alt-item"><span>${STORE_LABELS[c.store] || c.store} · ${escapeHtml(c.name)}</span><span>€${c.price.toFixed(2)}</span></div>
+                      `).join('')}
+                    </details>
+                  ` : ''}
+                ` : `<div style="font-family:Inter,sans-serif;font-size:12px;color:#B8480C;font-style:italic;">Kein Match</div>`}
+              </div>
+            `).join('')}
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // ========== ADD RECIPE MODAL ==========
+    let modalIngredients = [{ name: '', amount: '', unit: 'g' }];
+    function openAddModal() {
+      modalIngredients = [{ name: '', amount: '', unit: 'g' }];
+      document.body.insertAdjacentHTML('beforeend', renderModal());
+    }
+    function closeModal() { document.querySelector('.modal-overlay')?.remove(); }
+    function renderModal() {
+      return `
+        <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+          <div class="modal">
+            <div class="modal-header">
+              <h2 class="modal-title">Neues Rezept</h2>
+              <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
+            <input id="new-name" class="input" placeholder="Rezept-Name">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+              <label style="font-family:Inter,sans-serif;font-size:13px;color:#6B4C3A;">Portionen:</label>
+              <input id="new-servings" type="number" value="4" class="input-sm" style="width:70px;">
+            </div>
+            <h3 class="section-label">Zutaten</h3>
+            <div id="ing-container">${renderIngRows()}</div>
+            <button class="add-btn" onclick="addIngRow()">+ Zutat hinzufügen</button>
+            <button class="save-btn" onclick="saveNewRecipe()">Rezept speichern</button>
+          </div>
+        </div>
+      `;
+    }
+    function renderIngRows() {
+      return modalIngredients.map((ing, i) => `
+        <div class="ing-row-grid">
+          <input class="input-sm" placeholder="Zutat" value="${escapeHtml(ing.name)}" oninput="modalIngredients[${i}].name=this.value">
+          <input class="input-sm" type="number" placeholder="Menge" value="${ing.amount}" oninput="modalIngredients[${i}].amount=this.value">
+          <select class="input-sm" onchange="modalIngredients[${i}].unit=this.value">
+            ${['g','kg','ml','l','stk','EL','TL'].map(u => `<option ${ing.unit===u?'selected':''}>${u}</option>`).join('')}
+          </select>
+          <button class="input-sm" style="background:#FFF;border:1px solid #E8DCC9;color:#B8480C;" onclick="removeIngRow(${i})">🗑</button>
+        </div>
+      `).join('');
+    }
+    function addIngRow() {
+      modalIngredients.push({ name: '', amount: '', unit: 'g' });
+      document.getElementById('ing-container').innerHTML = renderIngRows();
+    }
+    function removeIngRow(i) {
+      modalIngredients.splice(i, 1);
+      document.getElementById('ing-container').innerHTML = renderIngRows();
+    }
+    function saveNewRecipe() {
+      const name = document.getElementById('new-name').value.trim();
+      const servings = Number(document.getElementById('new-servings').value);
+      if (!name) return alert('Name fehlt');
+      const valid = modalIngredients.filter(i => i.name.trim() && i.amount).map(i => ({ ...i, amount: Number(i.amount) }));
+      if (!valid.length) return alert('Min. 1 Zutat');
+      recipes.push({ id: 'r' + Date.now(), name, servings, ingredients: valid });
+      saveRecipes();
+      closeModal();
+      render();
+    }
+
+    // ========== NAVIGATION ==========
+    function openRecipe(id) { selectedRecipe = recipes.find(r => r.id === id); view = 'detail'; render(); }
+    function backToList() { view = 'recipes'; render(); }
+    function backToDetail() { view = 'detail'; render(); }
+    function startMatch() { findCheapestPrices(selectedRecipe); }
+
+    // ========== UTILS ==========
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    // ========== START ==========
+    loadRecipes();
+    render();
+    loadPriceData();
+  </script>
+</body>
+</html>
